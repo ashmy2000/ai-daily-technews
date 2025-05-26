@@ -66,38 +66,53 @@ const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
     }
   };
   
-  const handleSubmit = (e: React.FormEvent) => {
+  // === 2. OtpVerificationForm.tsx (calls /api/verify-otp) ===
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-    
-    const otpValue = otp.join('');
-    
+
+    const otpValue = otp.join('').trim();
+
     if (otpValue.length !== 4) {
       setError('Please enter the complete 4-digit code');
       setIsSubmitting(false);
       return;
     }
 
-    // Simulate API validation
-    setTimeout(() => {
-      // In a real app, this would validate the OTP with the backend
-      // For demo purposes, we'll accept any 4-digit code
-      onSuccess();
+    try {
+      const response = await axios.post('/api/verify-otp', {
+        username,
+        code: otpValue.toString()
+  // Ensure this is passed as a string
+      });
+
+      const data = response.data as { message: string };
+      if (data.message === 'OTP verified') {
+        onSuccess();
+      } else {
+        setError('Invalid OTP. Try again.');
+      }
+    } catch {
+      setError('Invalid OTP. Try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
-  
-  const handleResendOtp = () => {
+
+
+  const handleResendOtp = async () => {
     if (!canResend) return;
-    
-    // Simulate resending OTP
     setCountdown(60);
     setCanResend(false);
-    
-    // In a real app, this would trigger the API to resend an OTP
-    console.log('Resending OTP to', username);
+    try {
+      await axios.post('/api/send-otp', { username });
+    } catch {
+      console.error('Failed to resend OTP');
+    }
   };
+  
+
 
   return (
     <div className="w-full max-w-md">
