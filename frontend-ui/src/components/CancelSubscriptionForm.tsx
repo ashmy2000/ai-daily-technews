@@ -15,14 +15,15 @@ const CancelSubscriptionForm: React.FC<CancelSubscriptionFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+// === 4. CancelSubscriptionForm.tsx (calls /api/cancel) ===
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!confirmed) {
       setConfirmed(true);
       return;
     }
-    
+
     setIsSubmitting(true);
     setError('');
 
@@ -30,19 +31,16 @@ const CancelSubscriptionForm: React.FC<CancelSubscriptionFormProps> = ({
       ? username.trim().substring(1) 
       : username.trim();
 
-    if (validUsername.length < 5) {
-      setError('Please enter a valid Telegram username');
-      setIsSubmitting(false);
-      return;
-    }
-
-    // Simulate API call
-    setTimeout(() => {
-      // In a real app, this would verify the username and cancel the subscription
+    try {
+      await axios.post('/api/cancel', { username: validUsername });
       onSuccess();
+    } catch {
+      setError('Unable to cancel subscription. Please try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 1000);
+    }
   };
+
 
   return (
     <div className="w-full max-w-md">
