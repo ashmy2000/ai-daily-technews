@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
-
+import axios from 'axios';
 interface TelegramFormProps {
   onSuccess: (username: string) => void;
   onBack: () => void;
@@ -12,27 +12,31 @@ const TelegramForm: React.FC<TelegramFormProps> = ({ onSuccess, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showUsernameForm, setShowUsernameForm] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError('');
+// === 1. TelegramForm.tsx (calls /api/send-otp) ===
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setError('');
 
-    const validUsername = username.trim().startsWith('@') 
-      ? username.trim().substring(1) 
-      : username.trim();
+  const validUsername = username.trim().startsWith('@') 
+    ? username.trim().substring(1) 
+    : username.trim();
 
-    if (validUsername.length < 5) {
-      setError('Please enter a valid Telegram username');
-      setIsSubmitting(false);
-      return;
-    }
+  if (validUsername.length < 5) {
+    setError('Please enter a valid Telegram username');
+    setIsSubmitting(false);
+    return;
+  }
 
-    // Simulate API validation
-    setTimeout(() => {
-      onSuccess(validUsername);
-      setIsSubmitting(false);
-    }, 800);
-  };
+  try {
+    await axios.post('/api/send-otp', { username: validUsername });
+    onSuccess(validUsername);
+  } catch {
+    setError('Failed to send OTP. Make sure you have started the bot.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
 
   if (!showUsernameForm) {
     return (
