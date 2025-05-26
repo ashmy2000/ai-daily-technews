@@ -7,8 +7,9 @@ interface SubscriptionFormProps {
   onBack: () => void;
 }
 
+
 const SubscriptionForm: React.FC<SubscriptionFormProps> = ({ 
-  username, 
+  username,
   onSuccess, 
   onBack 
 }) => {
@@ -31,37 +32,25 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     return `${year}-${month}-${day}`;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+// === 3. SubscriptionForm.tsx (calls /api/subscribe) ===
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
 
-    if (subscriptionType === 'limited' && !expiryDate) {
-      setError('Please select an expiry date');
-      setIsSubmitting(false);
-      return;
-    }
+    const finalExpiryDate = subscriptionType === 'limited' ? new Date(expiryDate) : null;
 
-    // Validate date is in the future
-    if (subscriptionType === 'limited') {
-      const selectedDate = new Date(expiryDate);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      
-      if (selectedDate <= today) {
-        setError('Please select a future date');
-        setIsSubmitting(false);
-        return;
-      }
-    }
-
-    // Simulate API call
-    setTimeout(() => {
-      // In a real app, this would save the subscription to the backend
-      const finalExpiryDate = subscriptionType === 'limited' ? new Date(expiryDate) : null;
+    try {
+      await axios.post('/api/subscribe', {
+        username,
+        expiry_date: finalExpiryDate ? finalExpiryDate.toISOString().split('T')[0] : null,
+      });
       onSuccess(finalExpiryDate);
+    } catch {
+      setError('Subscription failed. Try again.');
+    } finally {
       setIsSubmitting(false);
-    }, 800);
+    }
   };
 
   return (
