@@ -18,9 +18,8 @@ const handleSubmit = async (e: React.FormEvent) => {
   setIsSubmitting(true);
   setError('');
 
-  const validUsername = username.trim().startsWith('@') 
-    ? username.trim().substring(1) 
-    : username.trim();
+  const validUsername = username.trim().toLowerCase();
+    onSuccess(validUsername);   // ✅ Pass clean version to parent
 
   if (validUsername.length < 5) {
     setError('Please enter a valid Telegram username');
@@ -29,13 +28,19 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 
   try {
-    await axios.post('/api/send-otp', { username: validUsername });
+    await axios.post('/api/register', {
+      username: validUsername
+    });
+
+    await axios.post('/api/send-otp', {
+      username: validUsername
+    });
+
     onSuccess(validUsername);
   } catch {
     setError('Failed to send OTP. Make sure you have started the bot.');
-  } finally {
-    setIsSubmitting(false);
   }
+
 };
 
   if (!showUsernameForm) {

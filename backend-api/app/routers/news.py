@@ -13,11 +13,11 @@ def get_mock_news():
         news = json.load(f)
     return {"articles": news}
 
-def send_mock_news_to_user(username: str):
+def send_mock_news_to_user(chat_id: int):
     file_path = Path(__file__).parent.parent / "data" / "fake_news.json"
     with open(file_path, "r") as f:
         articles = json.load(f)
 
     for article in articles:
         message = format_message(article)
-        send_telegram_message(username, message)
+        send_telegram_message(chat_id, message)

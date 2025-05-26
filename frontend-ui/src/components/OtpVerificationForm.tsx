@@ -72,7 +72,8 @@ const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
     setIsSubmitting(true);
     setError('');
 
-    const otpValue = otp.join('');
+    const otpValue = otp.join('').trim();
+
     if (otpValue.length !== 4) {
       setError('Please enter the complete 4-digit code');
       setIsSubmitting(false);
@@ -80,17 +81,25 @@ const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
     }
 
     try {
-      await axios.post('/api/verify-otp', {
+      const response = await axios.post('/api/verify-otp', {
         username,
-        code: otpValue,
+        code: otpValue.toString()
+  // Ensure this is passed as a string
       });
-      onSuccess();
+
+      const data = response.data as { message: string };
+      if (data.message === 'OTP verified') {
+        onSuccess();
+      } else {
+        setError('Invalid OTP. Try again.');
+      }
     } catch {
       setError('Invalid OTP. Try again.');
     } finally {
       setIsSubmitting(false);
     }
   };
+
 
   const handleResendOtp = async () => {
     if (!canResend) return;
