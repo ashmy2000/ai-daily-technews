@@ -18,6 +18,7 @@ const AccessCodeForm: React.FC<AccessCodeFormProps> = ({ onSuccess }) => {
     // Simulate API validation
     setTimeout(() => {
       if (accessCode === '2000') {
+        console.log('✅ Access code accepted');
         onSuccess();
       } else {
         setError('Invalid access code. Please try again.');

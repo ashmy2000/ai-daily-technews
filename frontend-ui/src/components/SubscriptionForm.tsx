@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Calendar, Infinity } from 'lucide-react';
-
+import axios from 'axios';
+import { API_BACKEND_BASE_URL } from '../config/api'; 
 interface SubscriptionFormProps {
   username: string;
   onSuccess: (expiryDate: Date | null) => void;
@@ -41,7 +42,7 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     const finalExpiryDate = subscriptionType === 'limited' ? new Date(expiryDate) : null;
 
     try {
-      await axios.post('/api/subscribe', {
+      await axios.post(`${API_BACKEND_BASE_URL}/subscribe`, {
         username,
         expiry_date: finalExpiryDate ? finalExpiryDate.toISOString().split('T')[0] : null,
       });

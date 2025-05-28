@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MessageSquare, Send } from 'lucide-react';
 import axios from 'axios';
+import { API_BACKEND_BASE_URL } from '../config/api'; 
 interface TelegramFormProps {
   onSuccess: (username: string) => void;
   onBack: () => void;
@@ -18,8 +19,7 @@ const handleSubmit = async (e: React.FormEvent) => {
   setIsSubmitting(true);
   setError('');
 
-  const validUsername = username.trim().toLowerCase();
-    onSuccess(validUsername);   // ✅ Pass clean version to parent
+  const validUsername = username.trim().replace(/^@/, '')
 
   if (validUsername.length < 5) {
     setError('Please enter a valid Telegram username');
@@ -28,20 +28,21 @@ const handleSubmit = async (e: React.FormEvent) => {
   }
 
   try {
-    await axios.post('/api/register', {
-      username: validUsername
-    });
+    // 1️⃣ Trigger OTP API call
+    const response = await axios.post(`${API_BACKEND_BASE_URL}/send-otp`,
+      { username: validUsername }
+    );
 
-    await axios.post('/api/send-otp', {
-      username: validUsername
-    });
-
-    onSuccess(validUsername);
-  } catch {
-    setError('Failed to send OTP. Make sure you have started the bot.');
+    console.log('✅ OTP sent to Telegram:', response.data); // success log
+    onSuccess(validUsername); // go to next step
+  } catch (err) {
+    console.error('❌ Failed to send OTP:', err);
+    setError('Failed to send OTP. Please make sure you have started the bot.');
+  } finally {
+    setIsSubmitting(false);
   }
-
 };
+
 
   if (!showUsernameForm) {
     return (
@@ -72,7 +73,15 @@ const handleSubmit = async (e: React.FormEvent) => {
             Back
           </button>
           <button
-            onClick={() => setShowUsernameForm(true)}
+            onClick={async () => {
+              try {
+                await axios.post(`${API_BACKEND_BASE_URL}/updates`);
+                setShowUsernameForm(true); // then show the username input form
+                console.log("✅ Updated the DB now with latest users");
+              } catch (err) {
+                console.error("❌ Failed to fetch updates:", err);
+              }
+            }}
             className="flex-1 py-3 px-4 rounded-lg text-white font-medium bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all"
           >
             Continue
