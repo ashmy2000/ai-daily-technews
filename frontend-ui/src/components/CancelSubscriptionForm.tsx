@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { XCircle } from 'lucide-react';
-
+import axios from 'axios';
+import { API_BACKEND_BASE_URL } from '../config/api';
 interface CancelSubscriptionFormProps {
   onSuccess: () => void;
   onBack: () => void;
@@ -32,7 +33,8 @@ const CancelSubscriptionForm: React.FC<CancelSubscriptionFormProps> = ({
       : username.trim();
 
     try {
-      await axios.post('/api/cancel', { username: validUsername });
+      console.log('🚫 Cancelling subscription for:', validUsername);
+      await axios.post(`${API_BACKEND_BASE_URL}/cancel`, { username: validUsername });
       onSuccess();
     } catch {
       setError('Unable to cancel subscription. Please try again.');

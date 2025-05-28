@@ -1,33 +1,22 @@
+# Standard library imports
+import os
+from datetime import datetime, timedelta
+
+# Third-party imports
+import httpx
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
-import os
-import httpx
+import asyncio  # Include this early if used later
+
+# Internal application imports
 from app.services.otp_service import generate_otp, verify_otp
 from app.services.telegram_bot import send_telegram_message
 from app.routers.news import send_mock_news_to_user
-from datetime import datetime, timedelta
 from app.db.mongo import telegram_users_collection, users_collection, raw_updates_collection
+from app.schema.telegram import OTPRequest, OTPVerify, SubscriptionRequest, CancelRequest
 
 router = APIRouter()
-
-class StartRequest(BaseModel):
-    username: str
-    chat_id: int
-
-class OTPRequest(BaseModel):
-    username: str
-
-class OTPVerify(BaseModel):
-    username: str
-    code: str
-
-class SubscriptionRequest(BaseModel):
-    username: str
-    expiry_date: Optional[str] = None
-
-class CancelRequest(BaseModel):
-    username: str
 
 async def get_chat_id_from_username(username: str) -> Optional[int]:
     token = os.getenv("TELEGRAM_BOT_TOKEN")
@@ -46,12 +35,40 @@ async def get_chat_id_from_username(username: str) -> Optional[int]:
             return chat.get("id")
     return None
 
-# backend-api/app/routers/telegram.py
-
-from app.db.mongo import raw_updates_collection, telegram_users_collection
 
 
-@router.post("/send-otp")
+@router.post("/updates", summary="1. Retrieve Users who have clicked 'start' in Telegram")
+async def fetch_and_store_telegram_updates():
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
+    url = f"https://api.telegram.org/bot{token}/getUpdates"
+
+    async with httpx.AsyncClient() as client:
+        response = await client.get(url)
+
+    if response.status_code != 200:
+        raise HTTPException(status_code=500, detail="Failed to fetch Telegram updates")
+
+    updates = response.json().get("result", [])
+
+    inserted_count = 0
+
+    for update in updates:
+        message = update.get("message", {})
+        chat = message.get("chat", {})
+
+        username = chat.get("username")
+        if username:
+            # ✅ Upsert by username
+            await raw_updates_collection.update_one(
+                {"message.chat.username": username},
+                {"$set": update},
+                upsert=True
+            )
+            inserted_count += 1
+
+    return {"message": f"{inserted_count} updates stored/updated by username."}
+
+@router.post("/send-otp", summary="2. Send OTP to user")
 async def send_otp(data: OTPRequest):
     username = data.username.strip()
 
@@ -79,7 +96,7 @@ async def send_otp(data: OTPRequest):
         )
 
         # 3. Send OTP to Telegram
-        await send_telegram_message(chat_id, f"🔐 Your TechInsight OTP is: {code}")
+        send_telegram_message(chat_id, f"🔐 Your TechInsight OTP is: {code}")
         return {"message": "OTP sent"}
 
     except Exception as e:
@@ -89,7 +106,7 @@ async def send_otp(data: OTPRequest):
 
 
 
-@router.post("/verify-otp")
+@router.post("/verify-otp" , summary="3. Verify OTP from user")
 async def verify_user_otp(data: OTPVerify):
     username = data.username.strip()
 
@@ -121,7 +138,7 @@ async def verify_user_otp(data: OTPVerify):
 from app.routers.news import send_mock_news_to_user
 import asyncio
 
-@router.post("/subscribe")
+@router.post("/subscribe", summary="4. Add user to subscribers and send mock news. (Boolean flag=True)")
 async def subscribe(data: SubscriptionRequest):
     username = data.username.strip()
     
@@ -151,7 +168,7 @@ async def subscribe(data: SubscriptionRequest):
     return {"message": "Subscription successful"}
 
 
-@router.post("/cancel")
+@router.post("/cancel", summary="Cancel user subscription (Boolean flag=False)")
 async def cancel(data: CancelRequest):
     username = data.username.strip()
 
@@ -177,45 +194,3 @@ async def cancel(data: CancelRequest):
     return {"message": "Subscription cancelled"}
 
 
-@router.post("/fetch-and-save-updates")
-async def fetch_and_store_telegram_updates():
-    token = os.getenv("TELEGRAM_BOT_TOKEN")
-    url = f"https://api.telegram.org/bot{token}/getUpdates"
-
-    async with httpx.AsyncClient() as client:
-        response = await client.get(url)
-
-    if response.status_code != 200:
-        raise HTTPException(status_code=500, detail="Failed to fetch Telegram updates")
-
-    updates = response.json().get("result", [])
-
-    inserted_count = 0
-
-    for update in updates:
-        message = update.get("message", {})
-        chat = message.get("chat", {})
-
-        username = chat.get("username")
-        if username:
-            # ✅ Upsert by username
-            await raw_updates_collection.update_one(
-                {"message.chat.username": username},
-                {"$set": update},
-                upsert=True
-            )
-            inserted_count += 1
-
-    return {"message": f"{inserted_count} updates stored/updated by username."}
-
-
-@router.get("/check-user-exists")
-async def check_user_exists(username: str):
-    user = await raw_updates_collection.find_one({
-        "message.chat.username": username.strip()
-    })
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found. Start the bot.")
-    
-    return {"message": "User exists"}

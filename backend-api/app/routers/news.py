@@ -6,7 +6,7 @@ from app.services.telegram_bot import send_telegram_message
 from app.utils import format_message
 router = APIRouter()
 
-@router.get("/news")
+@router.get("/news", include_in_schema=False)
 def get_mock_news():
     file_path = Path(__file__).parent.parent / "data" / "fake_news.json"
     with open(file_path, "r") as f:
