@@ -55,6 +55,9 @@ git clone https://github.com/ashmy2000/ai-daily-technews.git
 Since this is a monorepo we have the backend and frontend under the same repo. 
 <br>So we will have to move into each one seperatly to run the server
 <br>Let's start from the backend first:
+1. Add .env file and these fields
+- TELEGRAM_BOT_TOKEN=
+- MONGODB_URI=
 ```bash
 cd ai-technews
 cd backend-api
@@ -65,7 +68,9 @@ uvicorn app.main:app --reload
 ```
 The open http://127.0.0.1:8000/docs to check the swagger and endpoints
 <br><br>Now let's go into the frontend and start the UI 
-
+1. Add .env file and these fields
+- VITE_ACCESS_CODE=xxxx
+- VITE_API_BASE_URL=http://127.0.0.1:8000/api
 ```bash
 cd ..
 cd frontend-ui
