@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck } from 'lucide-react';
-
+import { API_BACKEND_BASE_URL } from '../config/api'; 
+import axios from 'axios';
 interface OtpVerificationFormProps {
   username: string;
   onSuccess: () => void;
@@ -17,7 +18,7 @@ const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [canResend, setCanResend] = useState(false);
-
+  const [resendMessage, setResendMessage] = useState('');
   // Countdown timer for OTP resend
   useEffect(() => {
     let timer: number | undefined;
@@ -66,39 +67,42 @@ const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
     }
   };
   
-  // === 2. OtpVerificationForm.tsx (calls /api/verify-otp) ===
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-    setError('');
+  // === 2. OtpVerificationForm.tsx (calls /api/verify-otp) ===const handleSubmit = async (e: React.FormEvent) => {
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setIsSubmitting(true);
+  setError('');
 
-    const otpValue = otp.join('').trim();
+  const otpValue = otp.join('').trim();
 
-    if (otpValue.length !== 4) {
-      setError('Please enter the complete 4-digit code');
-      setIsSubmitting(false);
-      return;
-    }
+  if (otpValue.length !== 4) {
+    setError('Please enter the complete 4-digit code');
+    setIsSubmitting(false);
+    return;
+  }
 
-    try {
-      const response = await axios.post('/api/verify-otp', {
-        username,
-        code: otpValue.toString()
-  // Ensure this is passed as a string
-      });
+  try {
+    const response = await axios.post(`${API_BACKEND_BASE_URL}/verify-otp`, {
+      username: username.trim(),
+      code: otpValue.toString(),
+    });
 
-      const data = response.data as { message: string };
-      if (data.message === 'OTP verified') {
-        onSuccess();
-      } else {
-        setError('Invalid OTP. Try again.');
-      }
-    } catch {
+    const data = response.data as { message: string };
+    if (data.message === 'OTP verified') {
+      console.log('✅ Verified for:', username);
+      onSuccess();
+    } else {
       setError('Invalid OTP. Try again.');
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  } catch (err) {
+    console.error('❌ API error during OTP verification:', err);
+    setError('Invalid OTP. Try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+
 
 
   const handleResendOtp = async () => {
@@ -106,9 +110,12 @@ const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
     setCountdown(60);
     setCanResend(false);
     try {
-      await axios.post('/api/send-otp', { username });
+      await axios.post(`${API_BACKEND_BASE_URL}/send-otp`, { username });
+      console.log('🔄 OTP resent to:', username);
+      setResendMessage('Verification code resent successfully ✅');
+      setOtp(['', '', '', '']); // ✅ clear inputs
     } catch {
-      console.error('Failed to resend OTP');
+      console.error('❌ Failed to resend OTP');
     }
   };
   
@@ -167,6 +174,9 @@ const OtpVerificationForm: React.FC<OtpVerificationFormProps> = ({
               : `Resend code in ${countdown}s`
             }
           </button>
+            {resendMessage && (
+              <p className="text-green-600 text-sm mt-2">{resendMessage}</p>
+            )}
         </div>
         
         <div className="flex space-x-3">
