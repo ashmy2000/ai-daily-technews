@@ -96,7 +96,7 @@ async def send_otp(data: OTPRequest):
         )
 
         # 3. Send OTP to Telegram
-        send_telegram_message(chat_id, f"🔐 Your TechInsight OTP is: {code}")
+        await send_telegram_message(chat_id, f"🔐 Your TechInsight OTP is: {code}")
         return {"message": "OTP sent"}
 
     except Exception as e:
@@ -195,7 +195,7 @@ async def cancel(data: CancelRequest):
     chat_id = user_record["message"]["chat"]["id"]
 
     # Step 3: Send Telegram message
-    send_telegram_message(chat_id, "❌ Your TechInsight subscription has been cancelled.")
+    await send_telegram_message(chat_id, "❌ Your TechInsight subscription has been cancelled.")
 
     return {"message": "Subscription cancelled"}
 
