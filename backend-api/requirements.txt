@@ -1,11 +1,29 @@
-### backend-api/requirements.txt
+# FastAPI & Server
 fastapi
-uvicorn[standard]
-httpx
-python-dotenv
-pydantic
-openai>=1.0.0
-pymongo[srv]
+uvicorn
+
+# Scheduling
 apscheduler
-pytest
-black
+
+# Async HTTP Clients
+httpx
+requests
+
+# MongoDB Async Driver
+motor
+pymongo
+dnspython
+
+# Environment Variables
+python-dotenv
+
+# Pydantic for schema validation
+pydantic
+
+# OpenAI SDK
+openai
+
+# Typing (already in stdlib in modern Python, but good for compatibility)
+typing-extensions
+
+# Optional: for datetime, path, json (all are stdlib, no need to list)
