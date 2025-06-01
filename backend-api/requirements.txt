@@ -1,0 +1,8 @@
+### backend-api/requirements.txt
+fastapi
+uvicorn
+python-dotenv
+httpx
+requests
+motor
+pymongo
