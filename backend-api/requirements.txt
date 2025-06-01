@@ -6,3 +6,4 @@ httpx
 requests
 motor
 pymongo
+openai>=1.0.0
