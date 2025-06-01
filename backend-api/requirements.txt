@@ -1,8 +1,11 @@
 ### backend-api/requirements.txt
 fastapi
-uvicorn
-python-dotenv
+uvicorn[standard]
 httpx
-requests
-motor
-pymongo
+python-dotenv
+pydantic
+openai>=1.0.0
+pymongo[srv]
+apscheduler
+pytest
+black
