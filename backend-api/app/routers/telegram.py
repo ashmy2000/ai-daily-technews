@@ -106,7 +106,7 @@ async def send_otp(data: OTPRequest):
 
 
 
-@router.post("/verify-otp" , summary="3. Verify OTP from user")
+@router.post("/verify-otp", summary="3. Verify OTP from user")
 async def verify_user_otp(data: OTPVerify):
     username = data.username.strip()
 
@@ -118,21 +118,29 @@ async def verify_user_otp(data: OTPVerify):
     if not user_record:
         raise HTTPException(status_code=404, detail="User not found")
 
+    chat_id = user_record["message"]["chat"]["id"]
+
     # Step 2: Get the saved OTP and expiry
     stored_code = user_record.get("otp_code")
     expires_at = user_record.get("otp_expires_at")
 
     if not stored_code or not expires_at:
+        await send_telegram_message(chat_id, "❌ No OTP found. Please request a new one.")
         raise HTTPException(status_code=400, detail="No OTP found. Please request a new one.")
 
-    # Step 3: Compare OTP
     if stored_code != data.code:
+        await send_telegram_message(chat_id, "❌ Invalid OTP. Please try again.")
         raise HTTPException(status_code=400, detail="Invalid OTP")
 
     if datetime.utcnow() > expires_at:
+        await send_telegram_message(chat_id, "❌ OTP expired. Please request a new one.")
         raise HTTPException(status_code=400, detail="OTP expired")
 
+    # ✅ If everything passes
+    await send_telegram_message(chat_id, "✅ OTP verified successfully! You can now continue your subscription.")
     return {"message": "OTP verified"}
+
+
 
 
 
@@ -158,7 +166,7 @@ async def subscribe(data: SubscriptionRequest):
     )
 
     try:
-        await send_telegram_message(chat_id, "🎉 Subscribed! You'll get news each day")
+        await send_telegram_message(chat_id, "🎉 Subscribed! You'll get news each day at 7am. Here is 5 news now...")
     except Exception as e:
         print(f"Failed to send message to {chat_id}: {e}")
 
